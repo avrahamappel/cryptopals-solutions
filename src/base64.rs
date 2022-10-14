@@ -64,6 +64,14 @@ fn split(chunk: &[u8]) -> Vec<u8> {
     }
 }
 
+pub fn encode(bytes: &[u8]) -> String {
+    bytes
+        .chunks(3)
+        .flat_map(split)
+        .filter_map(Alphabet::get_char_for_index)
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     #[test]
@@ -76,5 +84,10 @@ mod tests {
         ] {
             assert_eq!(expected, super::split(input.as_bytes()));
         }
+    }
+
+    #[test]
+    fn encode() {
+        assert_eq!("UGFuY2FrZQ", super::encode("Pancake".as_bytes()));
     }
 }
