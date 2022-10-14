@@ -1,4 +1,5 @@
 fn join(chunk: &[u8]) -> u8 {
+    // Algorithm taken from https://github.com/KokaKiwi/rust-hex
     let value = |c| match c {
         b'A'..=b'Z' => c - b'A' + 10,
         b'a'..=b'z' => c - b'a' + 10,
