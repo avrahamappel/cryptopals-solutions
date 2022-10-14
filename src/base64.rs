@@ -36,11 +36,45 @@ impl Alphabet {
         }
 
         None
-        // _ => None,
-        // }
     }
 
     fn get_padding_char() -> char {
         '='
+    }
+}
+
+fn split(chunk: &[u8]) -> Vec<u8> {
+    match chunk.len() {
+        1 => vec![&chunk[0] >> 2, (&chunk[0] & 0b00000011) << 4],
+
+        2 => vec![
+            &chunk[0] >> 2,
+            (&chunk[0] & 0b00000011) << 4 | &chunk[1] >> 4,
+            (&chunk[1] & 0b00001111) << 2,
+        ],
+
+        3 => vec![
+            &chunk[0] >> 2,
+            (&chunk[0] & 0b00000011) << 4 | &chunk[1] >> 4,
+            (&chunk[1] & 0b00001111) << 2 | &chunk[2] >> 6,
+            &chunk[2] & 0b00111111,
+        ],
+
+        _ => unreachable!(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn split() {
+        for (input, expected) in [
+            // The binary representation of "Hi" is `01001000 01101001 00100001`
+            ("H", vec![0b00010010, 0b00000000]),
+            ("Hi", vec![0b00010010, 0b00000110, 0b00100100]),
+            ("Hi!", vec![0b00010010, 0b00000110, 0b00100100, 0b00100001]),
+        ] {
+            assert_eq!(expected, super::split(input.as_bytes()));
+        }
     }
 }
