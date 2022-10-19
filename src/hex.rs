@@ -20,7 +20,8 @@ pub fn decode(s: &str) -> Vec<u8> {
 }
 
 fn split(byte: &u8) -> [char; 2] {
-    let char_of = |b: u8| -> char { b.into() };
+    let table = b"0123456789abcdef";
+    let char_of = |b| table[b as usize].into();
 
     let first = byte >> 4;
     let second = byte & 0b00001111;
@@ -29,7 +30,7 @@ fn split(byte: &u8) -> [char; 2] {
 }
 
 pub fn encode(bytes: &[u8]) -> String {
-    bytes.into_iter().flat_map(split).collect()
+    bytes.iter().flat_map(split).collect()
 }
 
 #[cfg(test)]
