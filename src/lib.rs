@@ -3,26 +3,17 @@ pub mod hex;
 pub mod xor;
 
 pub fn exercise() {
-    /*
-     * Write a function that takes two equal-length buffers and produces their XOR combination.
+    // Single-byte XOR cipher
 
-    If your function works properly, then when you feed it the string:
+    // The hex encoded string:
+    // 1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736
+    // ... has been XOR'd against a single character. Find the key, decrypt the message.
 
-    1c0111001f010100061a024b53535009181c
-    ... after hex decoding, and when XOR'd against:
+    // You can do this by hand. But don't: write code to do it for you.
 
-    686974207468652062756c6c277320657965
-    ... should produce:
+    // How? Devise some method for "scoring" a piece of English plaintext. Character
+    // frequency is a good metric. Evaluate each output and choose the one with the best score.
 
-    746865206b696420646f6e277420706c6179
-    */
-    let first = hex::decode("1c0111001f010100061a024b53535009181c");
-    println!("first: {}", String::from_utf8_lossy(&first));
-    let second = hex::decode("686974207468652062756c6c277320657965");
-    println!("second: {}", String::from_utf8_lossy(&second));
-
-    let res = xor::fixed(&first, &second).unwrap();
-    println!("res: {}", String::from_utf8_lossy(&res));
-
-    println!("{}", hex::encode(&res));
+    // Achievement Unlocked
+    // You now have our permission to make "ETAOIN SHRDLU" jokes on Twitter.
 }
