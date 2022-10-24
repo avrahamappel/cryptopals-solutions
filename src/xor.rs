@@ -14,44 +14,106 @@ pub fn fixed(first: &[u8], second: &[u8]) -> Option<Vec<u8>> {
     Some(xord)
 }
 
-const ETOAIN: &[u8; 12] = b"ETAOINSHRDLU";
+const ETAOIN: &[u8; 95] = b" etaniosrldhc\numpfg.ybw,v0k1STC285A9x3I-647MB\"'PENFRDUqLGJHOWjz/<>K)(VY:QZX;?\x7F^&+[]$!*=~_\t{@\x05\x1B\x1E";
 
-fn score(bytes: &[u8]) -> u32 {
-    let mut occurences = ETOAIN
+/// A single-byte XOR possiblity, with score
+pub struct SingleByteXor {
+    pub byte: u8,
+    pub score: f64,
+    pub message: Vec<u8>,
+}
+
+/// How many times does each ETAOIN byte occur in this string
+fn occurences(bytes: &[u8]) -> Vec<(u8, usize)> {
+    let mut occurences = ETAOIN
         .iter()
         .map(|b| {
-            // occurences of b
-            let occurences = bytes.iter().filter(|b1| *b1 == b).count();
+            let occurences = bytes.iter().filter(|b1| **b1 == *b).count();
 
-            (b, occurences)
+            (*b, occurences)
         })
         .collect::<Vec<_>>();
 
     occurences.sort_by(|a, b| b.1.cmp(&a.1));
 
-    let occurences = occurences
+    occurences
+}
+
+/// How much does the occurence of each ETAOIN byte deviate from most English text
+fn occurence_weights(bytes: &[u8]) -> HashMap<u8, usize> {
+    occurences(bytes)
         .into_iter()
         .enumerate()
         .map(|(i, (b, _))| (b, i))
-        .collect::<HashMap<_, _>>();
-
-    // variance of occurences from ETOAIN value
-    let diff = |(i, b)| occurences.get(b).unwrap().abs_diff(i);
-    let variances = ETOAIN
-        .iter()
-        .rev()
-        .enumerate()
-        .map(diff)
-        .collect::<Vec<_>>();
-
-    // average of variances
-    (variances.iter().sum::<usize>() / variances.len()) as u32
+        .collect()
 }
 
-pub fn single(bytes: &[u8]) -> impl Iterator<Item = (u8, Vec<u8>, u32)> + '_ {
+/// Variance of occurences from ETAOIN value
+fn variances(bytes: &[u8]) -> Vec<usize> {
+    ETAOIN
+        .iter()
+        .enumerate()
+        .map(|(i, b)| occurence_weights(bytes).get(b).unwrap().abs_diff(i))
+        .collect()
+}
+
+fn average(scores: Vec<usize>) -> usize {
+    scores.iter().sum::<usize>() / scores.len()
+}
+
+fn percent(number: usize) -> f64 {
+    // (256 * 256 * 100) as f64 /
+    number as f64
+}
+
+fn score(bytes: &[u8]) -> f64 {
+    let percent = percent(average(variances(bytes)));
+    percent
+
+    //     if percent > 100.0 {
+    //         0.0
+    //     } else {
+    //         100.0 - percent
+    //     }
+}
+
+pub fn single(bytes: &[u8]) -> impl Iterator<Item = SingleByteXor> + '_ {
     (0x00..=0xFF).map(|b| {
-        let xord = fixed(bytes, &vec![b; bytes.len()]).unwrap();
-        let score = score(&xord);
-        (b, xord, score)
+        let message = fixed(bytes, &vec![b; bytes.len()]).unwrap();
+        let score = score(&message);
+
+        SingleByteXor {
+            byte: b,
+            message,
+            score,
+        }
     })
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn real_text_has_decent_score() {
+        assert_eq!(75.0, super::score(b"Hello world!"));
+    }
+
+    #[test]
+    fn uppercase_etoain_has_perfect_score() {
+        assert_eq!(100.0, super::score(b"ETOAINSHRDLU"));
+    }
+
+    #[test]
+    fn lowercase_etoain_has_perfect_score() {
+        assert_eq!(100.0, super::score(b"etoainshrdlu"));
+    }
+
+    #[test]
+    fn non_alphanumeric_gibberish_has_terrible_score() {
+        assert_eq!(0.0, super::score(b"@%##%#@^^&%$"));
+    }
+
+    #[test]
+    fn alphanumeric_gibberish_has_mediocre_score() {
+        assert_eq!(50.0, super::score(b"djb2iu3h2hfffnc"));
+    }
 }
