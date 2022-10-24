@@ -16,4 +16,13 @@ pub fn exercise() {
 
     // Achievement Unlocked
     // You now have our permission to make "ETAOIN SHRDLU" jokes on Twitter.
+    for (byte, message, score) in xor::single(&hex::decode(
+        "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736",
+    )) {
+        println!("BYTE: {}", byte);
+        println!("SCORE: {}", score);
+        println!("MESSAGE: {}", unsafe {
+            String::from_utf8_unchecked(message)
+        });
+    }
 }
