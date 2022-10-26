@@ -14,6 +14,10 @@ const SAMPLE_TEXT: &[u8; 459] = br#"
     Achievement Unlocked
     You now have our permission to make jokes on Twitter."#;
 
+fn ratio_to_percent(num: usize, den: usize) -> f64 {
+    (num * 100) as f64 / den as f64
+}
+
 fn char_frequency(text: &[u8]) -> HashMap<u8, f64> {
     text.iter()
         .fold(HashMap::new(), |mut hash, byte| {
@@ -26,7 +30,7 @@ fn char_frequency(text: &[u8]) -> HashMap<u8, f64> {
         })
         .into_iter()
         .map(|(byte, count)| {
-            let percent = (count * text.len()) as f64 / 100.0;
+            let percent = ratio_to_percent(count, text.len());
             (*byte, percent)
         })
         .collect()
@@ -40,9 +44,7 @@ fn variances(bytes: &[u8]) -> Vec<f64> {
     frequencies
         .into_iter()
         .map(|(b, freq)| {
-            let base_freq = base
-                .get(&b)
-                .expect("base frequencies should contain all chars");
+            let base_freq = base.get(&b).unwrap_or(&0.0);
 
             base_freq.sub(freq).abs()
         })
@@ -62,23 +64,23 @@ pub fn score(bytes: &[u8]) -> f64 {
 #[cfg(test)]
 mod tests {
     #[test]
+    fn ratio_to_percent() {
+        assert_eq!(20.0, super::ratio_to_percent(1, 5));
+    }
+
+    #[test]
     fn real_text_has_decent_score() {
-        assert_eq!(75.0, super::score(b"Hello world!"));
+        assert_eq!(5.0, super::score(b"Hello world!"));
     }
 
     #[test]
-    fn uppercase_etoain_has_perfect_score() {
-        assert_eq!(100.0, super::score(b"ETOAINSHRDLU"));
-    }
-
-    #[test]
-    fn lowercase_etoain_has_perfect_score() {
-        assert_eq!(100.0, super::score(b"etoainshrdlu"));
+    fn sample_text_has_perfect_score() {
+        assert_eq!(0.0, super::score(super::SAMPLE_TEXT));
     }
 
     #[test]
     fn non_alphanumeric_gibberish_has_terrible_score() {
-        assert_eq!(0.0, super::score(b"@%##%#@^^&%$"));
+        assert_eq!(100.0, super::score(b"@%##%#@^^&%$"));
     }
 
     #[test]
