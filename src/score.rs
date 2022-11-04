@@ -151,22 +151,14 @@ mod tests {
     }
 
     #[test]
-    fn real_text_has_decent_score() {
-        assert_eq!(5.0, super::score(b"Hello world!"));
-    }
-
-    #[test]
-    fn sample_text_has_perfect_score() {
-        assert_eq!(0.0, super::score(super::SAMPLE_TEXT.as_bytes()));
-    }
-
-    #[test]
-    fn non_alphanumeric_gibberish_has_terrible_score() {
-        assert_eq!(100.0, super::score(b"@%##%#@^^&%$"));
-    }
-
-    #[test]
-    fn alphanumeric_gibberish_has_mediocre_score() {
-        assert_eq!(50.0, super::score(b"djb2iu3h2hfffnc"));
+    fn score() {
+        for (input, expected) in [
+            (SAMPLE_TEXT, 0.0),
+            (HELLO, 9.070609070609072),
+            (GIBBERISH, 4.787768537768538),
+            (SOME_BYTES, 16.666666666666668),
+        ] {
+            assert_eq!(expected, super::score(input.as_bytes()));
+        }
     }
 }
