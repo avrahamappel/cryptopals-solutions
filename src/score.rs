@@ -14,8 +14,12 @@ const SAMPLE_TEXT: &str = r#"
     Achievement Unlocked
     You now have our permission to make jokes on Twitter."#;
 
+fn round_to_2(n: f64) -> f64 {
+    (n * 100.0).round() / 100.0
+}
+
 fn ratio_to_percent(num: usize, den: usize) -> f64 {
-    (num * 100) as f64 / den as f64
+    round_to_2((num * 100) as f64 / den as f64)
 }
 
 fn char_frequency(text: &[u8]) -> HashMap<u8, f64> {
@@ -46,13 +50,13 @@ fn variances(bytes: &[u8]) -> Vec<f64> {
         .map(|(b, freq)| {
             let base_freq = base.get(&b).unwrap_or(&0.0);
 
-            base_freq.sub(freq).abs()
+            round_to_2(base_freq.sub(freq).abs())
         })
         .collect()
 }
 
 fn average(scores: Vec<f64>) -> f64 {
-    scores.iter().sum::<f64>() / scores.len() as f64
+    round_to_2(scores.iter().sum::<f64>() / scores.len() as f64)
 }
 
 /// The score of a byte string. The lower the number, the more likely it is that the string is
@@ -80,46 +84,46 @@ mod tests {
             (
                 SAMPLE_TEXT,
                 &[
-                    (b'a', 4.158004158004158),
-                    (b'b', 0.8316008316008316),
-                    (b'c', 3.5343035343035343),
-                    (b'd', 3.1185031185031185),
-                    (b'e', 10.395010395010395),
-                    (b'f', 0.8316008316008316),
-                    (b'g', 1.6632016632016633),
-                    (b'h', 3.95010395010395),
-                    (b'i', 4.781704781704781),
-                    (b'j', 0.2079002079002079),
-                    (b'k', 0.8316008316008316),
-                    (b'l', 1.2474012474012475),
-                    (b'm', 1.6632016632016633),
-                    (b'n', 4.781704781704781),
-                    (b'o', 6.860706860706861),
-                    (b'p', 1.4553014553014554),
-                    (b'q', 0.2079002079002079),
-                    (b'r', 3.5343035343035343),
-                    (b's', 3.7422037422037424),
-                    (b't', 6.444906444906445),
-                    (b'u', 1.8711018711018712),
-                    (b'v', 0.8316008316008316),
-                    (b'w', 1.0395010395010396),
-                    (b'x', 0.4158004158004158),
-                    (b'y', 1.2474012474012475),
-                    (b'z', 0.2079002079002079),
+                    (b'a', 4.16),
+                    (b'b', 0.83),
+                    (b'c', 3.53),
+                    (b'd', 3.12),
+                    (b'e', 10.40),
+                    (b'f', 0.83),
+                    (b'g', 1.66),
+                    (b'h', 3.95),
+                    (b'i', 4.78),
+                    (b'j', 0.21),
+                    (b'k', 0.83),
+                    (b'l', 1.25),
+                    (b'm', 1.66),
+                    (b'n', 4.78),
+                    (b'o', 6.86),
+                    (b'p', 1.46),
+                    (b'q', 0.21),
+                    (b'r', 3.53),
+                    (b's', 3.74),
+                    (b't', 6.44),
+                    (b'u', 1.87),
+                    (b'v', 0.83),
+                    (b'w', 1.04),
+                    (b'x', 0.42),
+                    (b'y', 1.25),
+                    (b'z', 0.21),
                 ][..],
             ),
             (
                 HELLO,
                 &[
-                    (b'H', 8.333333333333334),
-                    (b'e', 8.333333333333334),
+                    (b'H', 8.33),
+                    (b'e', 8.33),
                     (b'l', 25.0),
-                    (b'o', 16.666666666666667),
-                    (b' ', 8.333333333333334),
-                    (b'w', 8.333333333333334),
-                    (b'r', 8.333333333333334),
-                    (b'd', 8.333333333333334),
-                    (b'!', 8.333333333333334),
+                    (b'o', 16.67),
+                    (b' ', 8.33),
+                    (b'w', 8.33),
+                    (b'r', 8.33),
+                    (b'd', 8.33),
+                    (b'!', 8.33),
                 ][..],
             ),
             (
@@ -135,12 +139,7 @@ mod tests {
             ),
             (
                 GIBBERISH,
-                &[
-                    (b'e', 10.0),
-                    (b'a', 16.666666666666668),
-                    (b'f', 10.0),
-                    (b'j', 6.666666666666667),
-                ][..],
+                &[(b'e', 10.0), (b'a', 16.67), (b'f', 10.0), (b'j', 6.67)][..],
             ),
         ] {
             let frequencies = super::char_frequency(input.as_bytes());
@@ -154,9 +153,9 @@ mod tests {
     fn score() {
         for (input, expected) in [
             (SAMPLE_TEXT, 0.0),
-            (HELLO, 9.070609070609072),
-            (GIBBERISH, 4.787768537768538),
-            (SOME_BYTES, 16.666666666666668),
+            (HELLO, 9.07),
+            (GIBBERISH, 4.79),
+            (SOME_BYTES, 16.67),
         ] {
             assert_eq!(expected, super::score(input.as_bytes()));
         }
