@@ -25,7 +25,17 @@ fn ratio_to_percent(num: usize, den: usize) -> f64 {
 fn char_frequency(text: &[u8]) -> HashMap<u8, f64> {
     text.iter()
         .fold(HashMap::new(), |mut hash, byte| {
-            hash.entry(byte)
+            let key = match byte {
+                b'A'..=b'Z' | b'a'..=b'z' => byte.to_ascii_lowercase(),
+                // 'P' for punctuation
+                b',' | b'.' | b'!' | b'?' | b'\'' | b'"' | b'(' | b')' | b'-' => b'P',
+                // 'S' for whitespace
+                b' ' | b'\n' => b'S',
+                // Other symbols
+                _ => b'@',
+            };
+
+            hash.entry(key)
                 .and_modify(|val| {
                     *val += 1;
                 })
@@ -35,7 +45,7 @@ fn char_frequency(text: &[u8]) -> HashMap<u8, f64> {
         .into_iter()
         .map(|(byte, count)| {
             let percent = ratio_to_percent(count, text.len());
-            (*byte, percent)
+            (byte, percent)
         })
         .collect()
 }
@@ -84,59 +94,52 @@ mod tests {
             (
                 SAMPLE_TEXT,
                 &[
-                    (b'a', 4.16),
-                    (b'b', 0.83),
-                    (b'c', 3.53),
-                    (b'd', 3.12),
-                    (b'e', 10.40),
-                    (b'f', 0.83),
+                    (b'a', 4.37),
+                    (b'b', 1.04),
+                    (b'c', 3.74),
+                    (b'd', 3.33),
+                    (b'e', 10.81),
+                    (b'f', 1.04),
                     (b'g', 1.66),
-                    (b'h', 3.95),
+                    (b'h', 4.16),
                     (b'i', 4.78),
                     (b'j', 0.21),
                     (b'k', 0.83),
                     (b'l', 1.25),
                     (b'm', 1.66),
                     (b'n', 4.78),
-                    (b'o', 6.86),
+                    (b'o', 7.07),
                     (b'p', 1.46),
                     (b'q', 0.21),
-                    (b'r', 3.53),
-                    (b's', 3.74),
-                    (b't', 6.44),
-                    (b'u', 1.87),
+                    (b'r', 3.74),
+                    (b's', 3.95),
+                    (b't', 6.86),
+                    (b'u', 2.08),
                     (b'v', 0.83),
                     (b'w', 1.04),
-                    (b'x', 0.42),
-                    (b'y', 1.25),
+                    (b'x', 0.62),
+                    (b'y', 1.66),
                     (b'z', 0.21),
+                    (b'P', 3.53),
+                    (b'S', 22.87),
+                    (b'@', 0.21),
                 ][..],
             ),
             (
                 HELLO,
                 &[
-                    (b'H', 8.33),
+                    (b'h', 8.33),
                     (b'e', 8.33),
                     (b'l', 25.0),
                     (b'o', 16.67),
-                    (b' ', 8.33),
+                    (b'S', 8.33),
                     (b'w', 8.33),
                     (b'r', 8.33),
                     (b'd', 8.33),
-                    (b'!', 8.33),
+                    (b'P', 8.33),
                 ][..],
             ),
-            (
-                SOME_BYTES,
-                &[
-                    (b'6', 10.0),
-                    (b'^', 30.0),
-                    (b'*', 20.0),
-                    (b'&', 20.0),
-                    (b'%', 10.0),
-                    (b'#', 10.0),
-                ][..],
-            ),
+            (SOME_BYTES, &[(b'@', 100.0)][..]),
             (
                 GIBBERISH,
                 &[(b'e', 10.0), (b'a', 16.67), (b'f', 10.0), (b'j', 6.67)][..],
@@ -153,9 +156,9 @@ mod tests {
     fn score() {
         for (input, expected) in [
             (SAMPLE_TEXT, 0.0),
-            (HELLO, 9.07),
-            (GIBBERISH, 4.79),
-            (SOME_BYTES, 16.67),
+            (HELLO, 8.47),
+            (GIBBERISH, 4.9),
+            (SOME_BYTES, 99.79),
         ] {
             assert_eq!(expected, super::score(input.as_bytes()));
         }
