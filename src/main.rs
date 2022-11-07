@@ -16,11 +16,9 @@ fn main() {
     // You now have our permission to make "ETAOIN SHRDLU" jokes on Twitter.
     for res in xor::single(&hex::decode(
         "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736",
-    ))
-    .filter(|x| x.score < 5.0)
-    {
-        println!("BYTE: {}", res.byte);
-        println!("SCORE: {}", res.score);
+    )) {
+        print!("BYTE: {} ", char::from(res.byte));
+        print!("SCORE: {}% ", res.score);
         println!("MESSAGE: {}", String::from_utf8_lossy(&res.message));
     }
 }
