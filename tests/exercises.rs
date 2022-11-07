@@ -28,3 +28,16 @@ fn fixed_xor() {
     assert_eq!("the kid don't play", String::from_utf8_lossy(&res));
     assert_eq!("746865206b696420646f6e277420706c6179", hex::encode(&res));
 }
+
+#[test]
+fn single_byte_xor() {
+    let bytes = hex::decode("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736");
+
+    let results = xor::single(&bytes);
+
+    assert_eq!(b'X', results[0].byte);
+    assert_eq!(
+        "Cooking MC's like a pound of bacon",
+        String::from_utf8_lossy(&results[0].message)
+    );
+}

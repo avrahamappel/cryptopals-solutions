@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::ops::Sub;
 
+// This is the text of the challenge
+// (I added a tiny bit so I could get a 'z' in there)
 const SAMPLE_TEXT: &str = r#"
     Single-byte cipher
 
@@ -79,9 +81,10 @@ pub fn score(bytes: &[u8]) -> f64 {
 mod tests {
     use super::SAMPLE_TEXT;
 
-    const HELLO: &str = "Hello world!";
-    const SOME_BYTES: &str = "6^*&^*^&%#";
+    // From https://randomwordgenerator.com/sentence.php
+    const REAL_TEXT: &str = "She felt that chill that makes the hairs on the back of your neck when he walked into the room.";
     const GIBBERISH: &str = "eafaefjae swndajaqwkwfbvhb ydz";
+    const SOME_BYTES: &str = "6^*&^*^&%#";
 
     #[test]
     fn ratio_to_percent() {
@@ -94,56 +97,56 @@ mod tests {
             (
                 SAMPLE_TEXT,
                 &[
-                    (b'a', 4.37),
-                    (b'b', 1.04),
-                    (b'c', 3.74),
-                    (b'd', 3.33),
-                    (b'e', 10.81),
-                    (b'f', 1.04),
-                    (b'g', 1.66),
-                    (b'h', 4.16),
-                    (b'i', 4.78),
-                    (b'j', 0.21),
-                    (b'k', 0.83),
-                    (b'l', 1.25),
-                    (b'm', 1.66),
-                    (b'n', 4.78),
-                    (b'o', 7.07),
-                    (b'p', 1.46),
-                    (b'q', 0.21),
-                    (b'r', 3.74),
-                    (b's', 3.95),
-                    (b't', 6.86),
-                    (b'u', 2.08),
-                    (b'v', 0.83),
-                    (b'w', 1.04),
-                    (b'x', 0.62),
-                    (b'y', 1.66),
-                    (b'z', 0.21),
-                    (b'P', 3.53),
                     (b'S', 22.87),
+                    (b'e', 10.81),
+                    (b'o', 7.07),
+                    (b't', 6.86),
+                    (b'i', 4.78),
+                    (b'n', 4.78),
+                    (b'a', 4.37),
+                    (b'h', 4.16),
+                    (b's', 3.95),
+                    (b'c', 3.74),
+                    (b'r', 3.74),
+                    (b'P', 3.53),
+                    (b'd', 3.33),
+                    (b'u', 2.08),
+                    (b'g', 1.66),
+                    (b'm', 1.66),
+                    (b'y', 1.66),
+                    (b'p', 1.46),
+                    (b'l', 1.25),
+                    (b'b', 1.04),
+                    (b'f', 1.04),
+                    (b'w', 1.04),
+                    (b'k', 0.83),
+                    (b'v', 0.83),
+                    (b'x', 0.62),
+                    (b'j', 0.21),
+                    (b'q', 0.21),
+                    (b'z', 0.21),
                     (b'@', 0.21),
                 ][..],
             ),
             (
-                HELLO,
+                REAL_TEXT,
                 &[
-                    (b'h', 8.33),
-                    (b'e', 8.33),
-                    (b'l', 25.0),
-                    (b'o', 16.67),
-                    (b'S', 8.33),
-                    (b'w', 8.33),
-                    (b'r', 8.33),
-                    (b'd', 8.33),
-                    (b'P', 8.33),
+                    (b'S', 20.00),
+                    (b'h', 10.53),
+                    (b'e', 10.53),
+                    (b'o', 6.32),
+                    (b'l', 4.21),
+                    (b'r', 3.16),
+                    (b'w', 2.11),
+                    (b'd', 1.05),
+                    (b'P', 1.05),
                 ][..],
             ),
-            (SOME_BYTES, &[(b'@', 100.0)][..]),
             (
                 GIBBERISH,
-                &[(b'e', 10.0), (b'a', 16.67), (b'f', 10.0), (b'j', 6.67)][..],
+                &[(b'a', 16.67), (b'e', 10.0), (b'f', 10.0), (b'j', 6.67)][..],
             ),
+            (SOME_BYTES, &[(b'@', 100.0)][..]),
         ] {
             let frequencies = super::char_frequency(input.as_bytes());
             for (byte, frequency) in expected {
@@ -156,8 +159,8 @@ mod tests {
     fn score() {
         for (input, expected) in [
             (SAMPLE_TEXT, 0.0),
-            (HELLO, 8.47),
-            (GIBBERISH, 4.9),
+            (REAL_TEXT, 1.63),
+            (GIBBERISH, 4.90),
             (SOME_BYTES, 99.79),
         ] {
             assert_eq!(expected, super::score(input.as_bytes()));

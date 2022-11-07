@@ -1,24 +1,10 @@
-use cryptopals::{hex, xor};
+// use `cryptopals::{hex, xor};
 
 fn main() {
-    // Single-byte XOR cipher
+    // Detect single-character XOR
+    // One of the 60-character strings in this file has been encrypted by single-character XOR.
 
-    // The hex encoded string:
-    // 1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736
-    // ... has been XOR'd against a single character. Find the key, decrypt the message.
+    // Find it.
 
-    // You can do this by hand. But don't: write code to do it for you.
-
-    // How? Devise some method for "scoring" a piece of English plaintext. Character
-    // frequency is a good metric. Evaluate each output and choose the one with the best score.
-
-    // Achievement Unlocked
-    // You now have our permission to make "ETAOIN SHRDLU" jokes on Twitter.
-    for res in xor::single(&hex::decode(
-        "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736",
-    )) {
-        print!("BYTE: {} ", char::from(res.byte));
-        print!("SCORE: {}% ", res.score);
-        println!("MESSAGE: {}", String::from_utf8_lossy(&res.message));
-    }
+    // (Your code from #3 should help.)
 }
