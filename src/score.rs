@@ -1,5 +1,7 @@
-use std::collections::HashMap;
+use integer_hasher::IntMap as HashMap;
 use std::ops::Sub;
+
+use lazy_static::lazy_static;
 
 // This is the text of the challenge
 // (I added a tiny bit so I could get a 'z' in there)
@@ -16,6 +18,11 @@ const SAMPLE_TEXT: &str = r#"
     Achievement Unlocked
     You now have our permission to make jokes on Twitter."#;
 
+lazy_static! {
+    static ref BASE_FREQUENCIES: HashMap<u8, f64> = char_frequency(SAMPLE_TEXT.as_bytes());
+    static ref BASE_WORD_LENGTH: f64 = avg_word_length(SAMPLE_TEXT.as_bytes());
+}
+
 fn round_to_2(n: f64) -> f64 {
     (n * 100.0).round() / 100.0
 }
@@ -26,7 +33,7 @@ fn ratio_to_percent(num: usize, den: usize) -> f64 {
 
 fn char_frequency(text: &[u8]) -> HashMap<u8, f64> {
     text.iter()
-        .fold(HashMap::new(), |mut hash, byte| {
+        .fold(HashMap::default(), |mut hash, byte| {
             let key = match byte {
                 b'A'..=b'Z' | b'a'..=b'z' => byte.to_ascii_lowercase(),
                 // 'P' for punctuation
@@ -52,15 +59,21 @@ fn char_frequency(text: &[u8]) -> HashMap<u8, f64> {
         .collect()
 }
 
-fn variances(bytes: &[u8]) -> Vec<f64> {
-    // TODO cache this at compile time
-    let base = char_frequency(SAMPLE_TEXT.as_bytes());
-    let frequencies = char_frequency(bytes);
+fn avg_word_length(bytes: &[u8]) -> f64 {
+    average(
+        bytes
+            .split(|b| *b == b' ')
+            .map(|w| w.len() as f64)
+            .collect(),
+    )
+}
 
-    frequencies
+#[allow(unused)]
+fn variances(bytes: &[u8]) -> Vec<f64> {
+    char_frequency(bytes)
         .into_iter()
         .map(|(b, freq)| {
-            let base_freq = base.get(&b).unwrap_or(&0.0);
+            let base_freq = BASE_FREQUENCIES.get(&b).unwrap_or(&0.0);
 
             round_to_2(base_freq.sub(freq).abs())
         })
@@ -71,10 +84,10 @@ fn average(scores: Vec<f64>) -> f64 {
     round_to_2(scores.iter().sum::<f64>() / scores.len() as f64)
 }
 
-/// The score of a byte string. The lower the number, the more likely it is that the string is
-/// English text.
+/// The score of a byte string. The lower the number, the
+/// more likely it is that the string is English text.
 pub fn score(bytes: &[u8]) -> f64 {
-    average(variances(bytes))
+    round_to_2(avg_word_length(bytes).sub(*BASE_WORD_LENGTH).abs())
 }
 
 #[cfg(test)]
@@ -159,9 +172,9 @@ mod tests {
     fn score() {
         for (input, expected) in [
             (SAMPLE_TEXT, 0.0),
-            (REAL_TEXT, 1.63),
-            (GIBBERISH, 4.90),
-            (SOME_BYTES, 99.79),
+            (REAL_TEXT, 0.02),
+            (GIBBERISH, 5.51),
+            (SOME_BYTES, 6.18),
         ] {
             assert_eq!(expected, super::score(input.as_bytes()));
         }

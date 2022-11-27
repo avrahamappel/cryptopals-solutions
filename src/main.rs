@@ -12,20 +12,18 @@ fn main() {
     let mut results = strings
         .lines()
         .flat_map(|l| {
+            println!("DECODING: {}", l);
             let bytes = hex::decode(l.trim());
 
-            xor::single(&bytes)
-                .into_iter()
-                .map(|res| (l.to_owned(), res))
+            xor::single(&bytes).collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
 
-    results.sort_by(|a, b| a.1.score.total_cmp(&b.1.score));
+    results.sort_by(|a, b| a.score.to_bits().cmp(&b.score.to_bits()));
 
-    for (l, res) in results.iter().take(10) {
-        println!("Hex: {}", l);
+    for res in results.iter().take(10) {
         println!(
-            "Decode by '{}' (probability: {}%): {}",
+            "XOR by '{}' (probability: {}%): {}",
             char::from(res.byte),
             res.score,
             String::from_utf8_lossy(&res.message)

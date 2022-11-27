@@ -33,11 +33,11 @@ fn fixed_xor() {
 fn single_byte_xor() {
     let bytes = hex::decode("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736");
 
-    let results = xor::single(&bytes);
+    let result = xor::single(&bytes).next().unwrap();
 
-    assert_eq!(b'X', results[0].byte);
+    assert_eq!(b'X', result.byte);
     assert_eq!(
         "Cooking MC's like a pound of bacon",
-        String::from_utf8_lossy(&results[0].message)
+        String::from_utf8_lossy(&result.message)
     );
 }

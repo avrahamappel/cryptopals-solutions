@@ -21,21 +21,15 @@ pub struct SingleByteXor {
     pub message: Vec<u8>,
 }
 
-pub fn single(bytes: &[u8]) -> Vec<SingleByteXor> {
-    let mut decoded = (0x00..=0xFF)
-        .map(|b| {
-            let message = fixed(bytes, &vec![b; bytes.len()]).unwrap();
-            let score = score::score(&message);
+pub fn single(bytes: &[u8]) -> impl Iterator<Item = SingleByteXor> + '_ {
+    (0x00..=0xFF).map(|b| {
+        let message = fixed(bytes, &vec![b; bytes.len()]).unwrap();
+        let score = score::score(&message);
 
-            SingleByteXor {
-                byte: b,
-                message,
-                score,
-            }
-        })
-        .collect::<Vec<_>>();
-
-    decoded.sort_by(|a, b| a.score.total_cmp(&b.score));
-
-    decoded
+        SingleByteXor {
+            byte: b,
+            message,
+            score,
+        }
+    })
 }

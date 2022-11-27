@@ -21,6 +21,7 @@ impl Alphabet {
         Some(char.into())
     }
 
+    #[allow(unused)]
     fn get_index_for_char(char: char) -> Option<u8> {
         if let Ok(char) = char.try_into() {
             let index = match char {
@@ -38,6 +39,7 @@ impl Alphabet {
         None
     }
 
+    #[allow(unused)]
     fn get_padding_char() -> char {
         '='
     }
