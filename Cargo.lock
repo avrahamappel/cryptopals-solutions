@@ -6,15 +6,8 @@ version = 3
 name = "cryptopals"
 version = "0.1.0"
 dependencies = [
- "integer-hasher",
  "lazy_static",
 ]
-
-[[package]]
-name = "integer-hasher"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e00405dce1365e3899e37df057fc200ce6918d1d9a2a7486e97ce0ad5d95e747"
 
 [[package]]
 name = "lazy_static"
