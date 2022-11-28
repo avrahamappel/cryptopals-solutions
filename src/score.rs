@@ -116,7 +116,7 @@ fn average(values: &[f64]) -> f64 {
 
 /// The score of a byte string. The lower the number, the
 /// more likely it is that the string is English text.
-pub fn score(bytes: &[u8]) -> f64 {
+pub(crate) fn score(bytes: &[u8]) -> f64 {
     round_to_2(Score::from(bytes).diff(*BASE_SCORES).avg())
 }
 

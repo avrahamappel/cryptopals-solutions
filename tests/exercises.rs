@@ -33,7 +33,7 @@ fn fixed_xor() {
 fn single_byte_xor() {
     let bytes = hex::decode("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736");
 
-    let result = xor::single(&bytes).next().unwrap();
+    let result = &xor::single(&bytes)[0];
 
     assert_eq!(b'X', result.byte);
     assert_eq!(

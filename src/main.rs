@@ -1,4 +1,6 @@
-use cryptopals::{hex, xor};
+use cryptopals::hex;
+use cryptopals::sorted::Sorted;
+use cryptopals::xor;
 
 fn main() {
     // Detect single-character XOR
@@ -9,17 +11,16 @@ fn main() {
     // (Your code from #3 should help.)
     let strings = include_str!("../data/4.txt");
 
-    let mut results = strings
+    let results = strings
         .lines()
         .flat_map(|l| {
             println!("DECODING: {}", l);
             let bytes = hex::decode(l.trim());
 
-            xor::single(&bytes).collect::<Vec<_>>()
+            xor::single(&bytes)
         })
-        .collect::<Vec<_>>();
-
-    results.sort_by(|a, b| a.score.to_bits().cmp(&b.score.to_bits()));
+        .collect::<Vec<_>>()
+        .sorted();
 
     for res in results.iter().take(10) {
         println!(
