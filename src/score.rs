@@ -88,63 +88,43 @@ pub(crate) fn score(bytes: &[u8]) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use test_case::test_case;
 
     // From https://randomwordgenerator.com/sentence.php
     const REAL_TEXT: &str = "She felt that chill that makes the hairs on the back of your neck when he walked into the room.";
     const GIBBERISH: &str = "eafaefjae swndajaqwkwfbvhb ydz";
     const SOME_BYTES: &str = "6^*&^*^&%#";
 
-    #[test]
-    fn base_score() {
-        for (input, expected) in [
-            (
-                SAMPLE_TEXT,
-                Score {
-                    avg_word_length: 3.82,
-                    avg_vowel_count: 1.4,
-                    avg_consonant_count: 2.13,
-                },
-            ),
-            (
-                REAL_TEXT,
-                Score {
-                    avg_word_length: 3.8,
-                    avg_vowel_count: 1.3,
-                    avg_consonant_count: 2.45,
-                },
-            ),
-            (
-                GIBBERISH,
-                Score {
-                    avg_word_length: 9.33,
-                    avg_vowel_count: 2.67,
-                    avg_consonant_count: 6.67,
-                },
-            ),
-            (
-                SOME_BYTES,
-                Score {
-                    avg_word_length: 10.0,
-                    avg_vowel_count: 0.0,
-                    avg_consonant_count: 0.0,
-                },
-            ),
-        ] {
-            let frequencies = Score::from(input.as_bytes());
-            assert_eq!(expected, frequencies);
-        }
+    #[test_case(SAMPLE_TEXT => Score {
+        avg_word_length: 3.82,
+        avg_vowel_count: 1.4,
+        avg_consonant_count: 2.13,
+    }; "Sample text")]
+    #[test_case(REAL_TEXT => Score {
+        avg_word_length: 3.8,
+        avg_vowel_count: 1.3,
+        avg_consonant_count: 2.45,
+    }; "Real text")]
+    #[test_case( GIBBERISH => Score {
+        avg_word_length: 9.33,
+        avg_vowel_count: 2.67,
+        avg_consonant_count: 6.67,
+    }; "Gibberish")]
+    #[test_case( SOME_BYTES => Score {
+        avg_word_length: 10.0,
+        avg_vowel_count: 0.0,
+        avg_consonant_count: 0.0,
+    }; "Some bytes")]
+    fn base_score(input: &str) -> Score {
+        Score::from(input.as_bytes())
     }
 
-    #[test]
-    fn score() {
-        for (input, expected) in [
-            (SAMPLE_TEXT, 0.0),
-            (REAL_TEXT, 0.15),
-            (GIBBERISH, 3.77),
-            // Have to record this kind
-            (SOME_BYTES, 3.24),
-        ] {
-            assert_eq!(expected, super::score(input.as_bytes()));
-        }
+    #[test_case(SAMPLE_TEXT, 0.0; "Sample text")]
+    #[test_case(REAL_TEXT, 0.15; "Real text")]
+    #[test_case(GIBBERISH, 3.77; "Gibberish")]
+    // Have to record this kind
+    #[test_case(SOME_BYTES, 3.24; "Some bytes")]
+    fn score(input: &str, expected: f64) {
+        assert_eq!(expected, super::score(input.as_bytes()));
     }
 }
