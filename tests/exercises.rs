@@ -1,5 +1,6 @@
 use cryptopals::base64;
 use cryptopals::hex;
+use cryptopals::sorted::Sorted;
 use cryptopals::xor;
 
 #[test]
@@ -39,5 +40,29 @@ fn single_byte_xor() {
     assert_eq!(
         "Cooking MC's like a pound of bacon",
         String::from_utf8_lossy(&result.message)
+    );
+}
+
+#[test]
+fn detect_single_char_xor() {
+    let strings = include_str!("../data/4.txt");
+
+    let results = strings
+        .lines()
+        .flat_map(|l| {
+            println!("DECODING: {}", l);
+            let bytes = hex::decode(l.trim());
+
+            xor::single(&bytes)
+        })
+        .collect::<Vec<_>>()
+        .sorted();
+
+    let result = &results[0];
+
+    assert_eq!(b'5', result.byte);
+    assert_eq!(
+        "Now that the party is jumping",
+        String::from_utf8_lossy(&result.message).trim()
     );
 }

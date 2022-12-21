@@ -76,16 +76,14 @@ pub fn encode(bytes: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn split() {
-        for (input, expected) in [
-            // The binary representation of "Hi" is `01001000 01101001 00100001`
-            ("H", vec![0b00010010, 0b00000000]),
-            ("Hi", vec![0b00010010, 0b00000110, 0b00100100]),
-            ("Hi!", vec![0b00010010, 0b00000110, 0b00100100, 0b00100001]),
-        ] {
-            assert_eq!(expected, super::split(input.as_bytes()));
-        }
+    use test_case::test_case;
+
+    // The binary representation of "Hi" is `01001000 01101001 00100001`
+    #[test_case("H", vec![0b00010010, 0b00000000]; "One char")]
+    #[test_case("Hi", vec![0b00010010, 0b00000110, 0b00100100]; "Two chars")]
+    #[test_case("Hi!", vec![0b00010010, 0b00000110, 0b00100100, 0b00100001]; "Three chars")]
+    fn split(input: &str, expected: Vec<u8>) {
+        assert_eq!(expected, super::split(input.as_bytes()));
     }
 
     #[test]
