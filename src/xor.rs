@@ -15,6 +15,19 @@ pub fn fixed(first: &[u8], second: &[u8]) -> Option<Vec<u8>> {
     Some(xord)
 }
 
+pub fn repeating(value: &[u8], key: &[u8]) -> Vec<u8> {
+    fixed(
+        value,
+        key.iter()
+            .copied()
+            .cycle()
+            .take(value.len())
+            .collect::<Vec<_>>()
+            .as_slice(),
+    )
+    .unwrap()
+}
+
 /// A single-byte XOR possiblity, with score
 pub struct SingleByteXor {
     pub byte: u8,
