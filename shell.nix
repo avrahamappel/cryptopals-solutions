@@ -7,6 +7,7 @@ pkgs.mkShell {
     clippy
     rustc
     rustfmt
+    rust-analyzer
   ];
   RUST_SRC_DIR = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
 }
