@@ -23,16 +23,20 @@ fn main() {
             let chunk1 = &input[..keysize];
             let chunk2 = &input[keysize..(keysize + 1)];
 
-            hamming::distance(chunk1, chunk2) / keysize
+            let dist: f32 = hamming::distance(chunk1, chunk2) as f32;
+
+            let normalized: f32 = dist / keysize as f32;
+
+            (normalized, keysize)
         })
         .collect();
 
-    key_sizes.sort();
+    key_sizes.sort_by(|(n1, _), (n2, _)| n1.total_cmp(n2));
 
     dbg!(&key_sizes);
 
     // The KEYSIZE with the smallest normalized edit distance is probably the key. You could proceed perhaps with the smallest 2-3 KEYSIZE values. Or take 4 KEYSIZE blocks instead of 2 and average the distances.
-    for keysize in key_sizes.into_iter().take(3) {
+    for keysize in key_sizes.into_iter().map(|(_, ks)| ks).take(3) {
         // Now that you probably know the KEYSIZE: break the ciphertext into blocks of KEYSIZE length.
         let key: Vec<_> = input
             .chunks_exact(keysize)
