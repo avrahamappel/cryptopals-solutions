@@ -28,11 +28,12 @@ struct Score {
     avg_word_length: f64,
     avg_vowel_count: f64,
     avg_consonant_count: f64,
+    avg_unprintable_count: f64,
 }
 
 impl From<&[u8]> for Score {
     fn from(bytes: &[u8]) -> Self {
-        let (awl, (avc, acc)): (Vec<_>, (Vec<_>, Vec<_>)) = bytes
+        let (awl, (unc, (avc, acc))): (Vec<_>, (Vec<_>, (Vec<_>, Vec<_>))) = bytes
             .split(|b| *b == b' ')
             .map(|w| {
                 let word_length = w.len();
@@ -42,7 +43,23 @@ impl From<&[u8]> for Score {
                     .iter()
                     .filter(|b| b"bcdfghjklmnpqrstvwxyz".contains(b))
                     .count();
-                (word_length as f64, (vowels as f64, consonants as f64))
+                let unprintables = w
+                    .iter()
+                    .filter(|b| match b {
+                        // 10 and 13 are LF and CR, respectively
+                        10 | 13 => false,
+
+                        // First 31 ASCII bytes are unprintable
+                        0..=31 => true,
+
+                        _ => false,
+                    })
+                    .count();
+
+                (
+                    word_length as f64,
+                    (unprintables as f64, (vowels as f64, consonants as f64)),
+                )
             })
             .unzip();
 
@@ -50,6 +67,7 @@ impl From<&[u8]> for Score {
             avg_word_length: average(&awl),
             avg_vowel_count: average(&avc),
             avg_consonant_count: average(&acc),
+            avg_unprintable_count: average(&unc),
         }
     }
 }
@@ -60,6 +78,7 @@ impl Score {
             avg_word_length: (self.avg_word_length - other.avg_word_length).abs(),
             avg_vowel_count: (self.avg_vowel_count - other.avg_vowel_count).abs(),
             avg_consonant_count: (self.avg_consonant_count - other.avg_consonant_count).abs(),
+            avg_unprintable_count: (self.avg_unprintable_count - other.avg_unprintable_count).abs(),
         }
     }
 
@@ -99,21 +118,25 @@ mod tests {
         avg_word_length: 3.82,
         avg_vowel_count: 1.4,
         avg_consonant_count: 2.13,
+        avg_unprintable_count: 0.0,
     }; "Sample text")]
     #[test_case(REAL_TEXT => Score {
         avg_word_length: 3.8,
         avg_vowel_count: 1.3,
         avg_consonant_count: 2.45,
+        avg_unprintable_count: 0.0,
     }; "Real text")]
-    #[test_case( GIBBERISH => Score {
+    #[test_case(GIBBERISH => Score {
         avg_word_length: 9.33,
         avg_vowel_count: 2.67,
         avg_consonant_count: 6.67,
+        avg_unprintable_count: 0.0,
     }; "Gibberish")]
-    #[test_case( SOME_BYTES => Score {
+    #[test_case(SOME_BYTES => Score {
         avg_word_length: 10.0,
         avg_vowel_count: 0.0,
         avg_consonant_count: 0.0,
+        avg_unprintable_count: 0.0,
     }; "Some bytes")]
     fn base_score(input: &str) -> Score {
         Score::from(input.as_bytes())
