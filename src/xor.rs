@@ -30,6 +30,7 @@ pub fn repeating(value: &[u8], key: &[u8]) -> Vec<u8> {
 }
 
 /// A single-byte XOR possiblity, with score
+#[derive(Debug)]
 pub struct SingleByteXor {
     pub byte: u8,
     pub score: f64,
@@ -159,7 +160,32 @@ mod tests {
     }
 
     #[test]
-    fn test_repeating_crack() {
+    fn test_single() {
+        let input = b"\x1A3\"q%v385$/&\"v\">?%w";
+        let byte = b'V';
+
+        assert_eq!(
+            Some(b"Let's encrypt this!".to_vec()),
+            super::fixed(input, &vec![byte; input.len()])
+        );
+    }
+
+    #[test]
+    fn test_crack_single() {
+        let input = b"\x1A3\"q%v385$/&\"v\">?%w";
+
+        assert_eq!(
+            Some(&SingleByteXor {
+                message: b"Let's encrypt this!".to_vec(),
+                byte: b'V',
+                score: 0.0
+            }),
+            super::single(input).first()
+        );
+    }
+
+    #[test]
+    fn test_crack_repeating() {
         todo!()
     }
 }
