@@ -16,7 +16,7 @@ const SAMPLE_TEXT: &str = r#"
     You now have our permission to make jokes on Twitter."#;
 
 lazy_static! {
-    static ref BASE_SCORE: Score = Score::from(SAMPLE_TEXT.as_bytes());
+    static ref BASE_SCORE: Score = Score::maybe_from(SAMPLE_TEXT.as_bytes()).unwrap();
 }
 
 fn round_to_2(n: f64) -> f64 {
@@ -28,12 +28,28 @@ struct Score {
     avg_word_length: f64,
     avg_vowel_count: f64,
     avg_consonant_count: f64,
-    avg_unprintable_count: f64,
 }
 
-impl From<&[u8]> for Score {
-    fn from(bytes: &[u8]) -> Self {
-        let (awl, (unc, (avc, acc))): (Vec<_>, (Vec<_>, (Vec<_>, Vec<_>))) = bytes
+impl Score {
+    fn maybe_from(bytes: &[u8]) -> Option<Self> {
+        let unprintables = bytes
+            .iter()
+            .filter(|b| match b {
+                // 10 and 13 are LF and CR, respectively
+                10 | 13 => false,
+
+                // First 31 ASCII bytes are unprintable
+                0..=31 => true,
+
+                _ => false,
+            })
+            .count();
+
+        if unprintables > 0 {
+            return None;
+        }
+
+        let (awl, (avc, acc)): (Vec<_>, (Vec<_>, Vec<_>)) = bytes
             .split(|b| *b == b' ')
             .map(|w| {
                 let word_length = w.len();
@@ -43,32 +59,16 @@ impl From<&[u8]> for Score {
                     .iter()
                     .filter(|b| b"bcdfghjklmnpqrstvwxyz".contains(b))
                     .count();
-                let unprintables = w
-                    .iter()
-                    .filter(|b| match b {
-                        // 10 and 13 are LF and CR, respectively
-                        10 | 13 => false,
 
-                        // First 31 ASCII bytes are unprintable
-                        0..=31 => true,
-
-                        _ => false,
-                    })
-                    .count();
-
-                (
-                    word_length as f64,
-                    (unprintables as f64, (vowels as f64, consonants as f64)),
-                )
+                (word_length as f64, (vowels as f64, consonants as f64))
             })
             .unzip();
 
-        Self {
+        Some(Self {
             avg_word_length: average(&awl),
             avg_vowel_count: average(&avc),
             avg_consonant_count: average(&acc),
-            avg_unprintable_count: average(&unc),
-        }
+        })
     }
 }
 
@@ -78,7 +78,6 @@ impl Score {
             avg_word_length: (self.avg_word_length - other.avg_word_length).abs(),
             avg_vowel_count: (self.avg_vowel_count - other.avg_vowel_count).abs(),
             avg_consonant_count: (self.avg_consonant_count - other.avg_consonant_count).abs(),
-            avg_unprintable_count: (self.avg_unprintable_count - other.avg_unprintable_count).abs(),
         }
     }
 
@@ -100,8 +99,10 @@ fn average(values: &[f64]) -> f64 {
 
 /// The score of a byte string. The lower the number, the
 /// more likely it is that the string is English text.
-pub(crate) fn score(bytes: &[u8]) -> f64 {
-    round_to_2(Score::from(bytes).diff(*BASE_SCORE).avg())
+pub(crate) fn score(bytes: &[u8]) -> Option<f64> {
+    Score::maybe_from(bytes)
+        .map(|score| score.diff(*BASE_SCORE).avg())
+        .map(round_to_2)
 }
 
 #[cfg(test)]
@@ -118,28 +119,24 @@ mod tests {
         avg_word_length: 3.82,
         avg_vowel_count: 1.4,
         avg_consonant_count: 2.13,
-        avg_unprintable_count: 0.0,
     }; "Sample text")]
     #[test_case(REAL_TEXT => Score {
         avg_word_length: 3.8,
         avg_vowel_count: 1.3,
         avg_consonant_count: 2.45,
-        avg_unprintable_count: 0.0,
     }; "Real text")]
     #[test_case(GIBBERISH => Score {
         avg_word_length: 9.33,
         avg_vowel_count: 2.67,
         avg_consonant_count: 6.67,
-        avg_unprintable_count: 0.0,
     }; "Gibberish")]
     #[test_case(SOME_BYTES => Score {
         avg_word_length: 10.0,
         avg_vowel_count: 0.0,
         avg_consonant_count: 0.0,
-        avg_unprintable_count: 0.0,
     }; "Some bytes")]
     fn base_score(input: &str) -> Score {
-        Score::from(input.as_bytes())
+        Score::maybe_from(input.as_bytes()).unwrap()
     }
 
     #[test_case(SAMPLE_TEXT, 0.0; "Sample text")]
@@ -148,6 +145,13 @@ mod tests {
     // Have to record this kind
     #[test_case(SOME_BYTES, 3.24; "Some bytes")]
     fn score(input: &str, expected: f64) {
-        assert_eq!(expected, super::score(input.as_bytes()));
+        assert_eq!(Some(expected), super::score(input.as_bytes()));
+    }
+
+    #[test]
+    fn test_score_skips_inputs_with_unprintable_chars() {
+        let input = b"js*^\x15\x113278";
+
+        assert_eq!(None, super::score(input));
     }
 }

@@ -59,15 +59,14 @@ impl PartialOrd for SingleByteXor {
 
 pub fn single(bytes: &[u8]) -> Vec<SingleByteXor> {
     (0x00..=0xFF)
-        .map(|b| {
+        .filter_map(|b| {
             let message = fixed(bytes, &vec![b; bytes.len()]).unwrap();
-            let score = score::score(&message);
 
-            SingleByteXor {
+            score::score(&message).map(|score| SingleByteXor {
                 byte: b,
                 message,
                 score,
-            }
+            })
         })
         .collect::<Vec<_>>()
         .sorted()
@@ -178,7 +177,7 @@ mod tests {
             Some(&SingleByteXor {
                 message: b"Let's encrypt this!".to_vec(),
                 byte: b'V',
-                score: 0.0
+                score: 1.37
             }),
             super::single(input).first()
         );
