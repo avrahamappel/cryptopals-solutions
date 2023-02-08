@@ -35,11 +35,17 @@ impl Score {
         let unprintables = bytes
             .iter()
             .filter(|b| match b {
+                // 127 is DEL
+                127 => true,
+
                 // 10 and 13 are LF and CR, respectively
                 10 | 13 => false,
 
                 // First 31 ASCII bytes are unprintable
                 0..=31 => true,
+
+                // C1
+                0x80..=0x9F => true,
 
                 _ => false,
             })

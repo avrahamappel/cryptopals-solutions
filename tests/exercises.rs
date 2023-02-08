@@ -36,7 +36,7 @@ fn single_byte_xor() {
 
     let result = &xor::single(&bytes)[0];
 
-    assert_eq!(b'X', result.byte);
+    assert_eq!(b'X', result.key);
     assert_eq!(
         "Cooking MC's like a pound of bacon",
         String::from_utf8_lossy(&result.message)
@@ -63,7 +63,7 @@ fn detect_single_char_xor() {
 
     let result = &results[0];
 
-    assert_eq!(b'5', result.byte);
+    assert_eq!(b'5', result.key);
     assert_eq!(
         "Now that the party is jumping",
         String::from_utf8_lossy(&result.message).trim()

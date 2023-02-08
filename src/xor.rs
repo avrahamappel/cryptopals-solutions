@@ -1,4 +1,7 @@
+use itertools::Itertools;
+
 use crate::hamming;
+use crate::hex;
 use crate::score;
 use crate::sorted::Sorted;
 
@@ -29,44 +32,58 @@ pub fn repeating(value: &[u8], key: &[u8]) -> Vec<u8> {
     .unwrap()
 }
 
-/// A single-byte XOR possiblity, with score
-#[derive(Debug)]
-pub struct SingleByteXor {
-    pub byte: u8,
+pub enum CrackedMessageError {
+    NoScore,
+}
+
+/// A cracked message possibility, with score
+#[derive(Debug, Clone)]
+pub struct CrackedMessage<K> {
+    pub key: K,
     pub score: f64,
     pub message: Vec<u8>,
 }
 
-impl PartialEq for SingleByteXor {
+impl<K> TryFrom<(K, Vec<u8>)> for CrackedMessage<K> {
+    type Error = CrackedMessageError;
+
+    fn try_from((key, message): (K, Vec<u8>)) -> Result<Self, Self::Error> {
+        score::score(&message)
+            .map(|score| Self {
+                key,
+                message,
+                score,
+            })
+            .ok_or(CrackedMessageError::NoScore)
+    }
+}
+
+impl<K> PartialEq for CrackedMessage<K> {
     fn eq(&self, other: &Self) -> bool {
         self.score == other.score
     }
 }
 
-impl Eq for SingleByteXor {}
+impl<K> Eq for CrackedMessage<K> {}
 
-impl Ord for SingleByteXor {
+impl<K> Ord for CrackedMessage<K> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.score.to_bits().cmp(&other.score.to_bits())
     }
 }
 
-impl PartialOrd for SingleByteXor {
+impl<K> PartialOrd for CrackedMessage<K> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
-pub fn single(bytes: &[u8]) -> Vec<SingleByteXor> {
+pub fn single(bytes: &[u8]) -> Vec<CrackedMessage<u8>> {
     (0x00..=0xFF)
         .filter_map(|b| {
             let message = fixed(bytes, &vec![b; bytes.len()]).unwrap();
 
-            score::score(&message).map(|score| SingleByteXor {
-                byte: b,
-                message,
-                score,
-            })
+            CrackedMessage::try_from((b, message)).ok()
         })
         .collect::<Vec<_>>()
         .sorted()
@@ -93,7 +110,9 @@ fn transpose(input: &[u8], size: usize) -> Vec<Vec<u8>> {
 // Return a list of possible sizes of key used to encode the given bytes with
 // repeating-key xor, ranked from most likely to least likely.
 fn guess_keysizes(input: &[u8]) -> Vec<usize> {
-    let mut keysizes: Vec<_> = (2..=40)
+    let max = 41.min(input.len() / 2);
+
+    let mut keysizes: Vec<_> = (2..max)
         .map(|keysize| {
             let chunk1 = &input[..keysize];
             let chunk2 = &input[keysize..(keysize + 1)];
@@ -112,32 +131,44 @@ fn guess_keysizes(input: &[u8]) -> Vec<usize> {
 }
 
 /// Crack repeating-key xor.
-pub fn repeating_crack(input: &[u8]) {
-    for keysize in guess_keysizes(input).iter() {
-        println!("Keysize: {keysize}");
+pub fn repeating_crack(input: &[u8]) -> Vec<CrackedMessage<Vec<u8>>> {
+    guess_keysizes(input)
+        .into_iter()
+        .flat_map(|keysize| {
+            println!("Keysize: {keysize}");
 
-        let key: Vec<_> = transpose(input, *keysize)
-            .into_iter()
-            .map(|block| {
-                // println!("Block: {}", String::from_utf8_lossy(&block));
-                let res = &single(&block)[0];
+            transpose(input, keysize)
+                .into_iter()
+                .map(|block| {
+                    // println!("Block: {}", hex::encode(&block));
 
-                // println!("Possible key:");
-                // println!("Byte: {}", res.byte);
-                // println!("Decoded block: {}", String::from_utf8_lossy(&res.message));
-                // println!("Probability: {}", res.score);
+                    single(&block).into_iter().map(|res| {
+                        println!("Possible key:");
+                        println!("Byte: {}", res.key);
+                        println!("Decoded block: {}", String::from_utf8_lossy(&res.message));
+                        println!("Probability: {}", res.score);
 
-                res.byte
-            })
-            // For each block, the single-byte XOR key that produces the best looking histogram is the repeating-key XOR key byte for that block. Put them together and you have the key.
-            .collect();
+                        res.key
+                    })
+                })
+                // For each block, the single-byte XOR key that produces the best looking histogram is the repeating-key XOR key byte for that block. Put them together and you have the key.
+                .multi_cartesian_product()
+                .inspect(|x| {
+                    dbg!(x);
+                })
+                .into_iter()
+                .filter_map(|key| {
+                    println!("Key: {}", hex::encode(&key));
 
-        println!("Key: {}", String::from_utf8_lossy(&key));
+                    let decoded = repeating(input, &key);
 
-        let decoded = repeating(input, &key);
+                    println!("Decoded: {}", String::from_utf8_lossy(&decoded));
 
-        println!("Decoded: {}", String::from_utf8_lossy(&decoded));
-    }
+                    CrackedMessage::try_from((key, decoded)).ok()
+                })
+        })
+        .collect_vec()
+        .sorted()
 }
 
 #[cfg(test)]
@@ -174,9 +205,9 @@ mod tests {
         let input = b"\x1A3\"q%v385$/&\"v\">?%w";
 
         assert_eq!(
-            Some(&SingleByteXor {
+            Some(&CrackedMessage {
                 message: b"Let's encrypt this!".to_vec(),
-                byte: b'V',
+                key: b'V',
                 score: 1.37
             }),
             super::single(input).first()
@@ -184,7 +215,22 @@ mod tests {
     }
 
     #[test]
+    fn test_repeating() {
+        assert_eq!(
+            b"\x07\r\x07\x13H\x12\x0EO>\x0CN\x02\x01\x08N2\x07\x04\x04\x06A\x14E-\x1B\x1DC\x0E\x0B\x01oL\\".to_vec(),
+            repeating(b"Four score and seven years ago...", b"Abraham Lincoln")
+        );
+    }
+
+    #[test]
     fn test_crack_repeating() {
-        todo!()
+        assert_eq!(
+            Some(&CrackedMessage {
+                key: b"Abraham Lincoln".to_vec(),
+                message: b"Four score and seven years ago...".to_vec(),
+                score: 0.0
+            }),
+            repeating_crack(b"\x07\r\x07\x13H\x12\x0EO>\x0CN\x02\x01\x08N2\x07\x04\x04\x06A\x14E-\x1B\x1DC\x0E\x0B\x01oL\\".as_slice()).first()
+        );
     }
 }
