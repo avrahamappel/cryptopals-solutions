@@ -1,7 +1,7 @@
 use itertools::Itertools;
 
 use crate::hamming;
-use crate::hex;
+// use crate::hex;
 use crate::score;
 use crate::sorted::Sorted;
 
@@ -125,7 +125,11 @@ fn guess_keysizes(input: &[u8]) -> Vec<usize> {
         })
         .collect();
 
-    keysizes.sort_by(|(n1, _), (n2, _)| n1.total_cmp(n2));
+    keysizes.sort_by(|(n1, _), (n2, _)| n2.total_cmp(n1));
+
+    for (n, k) in &keysizes {
+        println!("N: {n}, K: {k}");
+    }
 
     keysizes.into_iter().map(|(_, k)| k).collect()
 }
@@ -134,35 +138,36 @@ fn guess_keysizes(input: &[u8]) -> Vec<usize> {
 pub fn repeating_crack(input: &[u8]) -> Vec<CrackedMessage<Vec<u8>>> {
     guess_keysizes(input)
         .into_iter()
+        .take(3)
         .flat_map(|keysize| {
-            println!("Keysize: {keysize}");
+            // println!("Keysize: {keysize}");
 
             transpose(input, keysize)
                 .into_iter()
                 .map(|block| {
                     // println!("Block: {}", hex::encode(&block));
 
-                    single(&block).into_iter().map(|res| {
-                        println!("Possible key:");
-                        println!("Byte: {}", res.key);
-                        println!("Decoded block: {}", String::from_utf8_lossy(&res.message));
-                        println!("Probability: {}", res.score);
+                    single(&block).first().map(|res| {
+                        // println!("Possible key:");
+                        // println!("Byte: {}", char::from(res.key));
+                        // println!("Decoded block: {}", String::from_utf8_lossy(&res.message));
+                        // println!("Probability: {}", res.score);
 
                         res.key
                     })
                 })
                 // For each block, the single-byte XOR key that produces the best looking histogram is the repeating-key XOR key byte for that block. Put them together and you have the key.
                 .multi_cartesian_product()
-                .inspect(|x| {
-                    dbg!(x);
-                })
+                // .inspect(|x| {
+                //     println!("Key chars: {}", x.iter().copied().map(char::from).join(""));
+                // })
                 .into_iter()
                 .filter_map(|key| {
-                    println!("Key: {}", hex::encode(&key));
+                    // println!("Key hex: {}", hex::encode(&key));
 
                     let decoded = repeating(input, &key);
 
-                    println!("Decoded: {}", String::from_utf8_lossy(&decoded));
+                    // println!("Decoded: {}", String::from_utf8_lossy(&decoded));
 
                     CrackedMessage::try_from((key, decoded)).ok()
                 })
