@@ -111,19 +111,21 @@ fn transpose(input: &[u8], size: usize) -> Vec<Vec<u8>> {
 
 // Return a list of possible sizes of key used to encode the given bytes with
 // repeating-key xor, ranked from most likely to least likely.
-pub fn guess_keysizes(input: &[u8], samples: usize) -> Vec<(f32, usize)> {
-    let max = 41.min(input.len() / 2);
+#[must_use]
+pub fn guess_keysizes(input: &[u8], min: usize, max: usize) -> Vec<(f32, usize)> {
+    let max = max.min(input.len() / 2);
 
-    let mut keysizes: Vec<_> = (2..max)
+    // let mut keysizes: Vec<_> =
+    (min..max)
         .map(|keysize| {
             // let samples = 1;
 
             let distances: Vec<_> = input
                 .chunks(keysize)
-                .take(samples)
+                .take(2)
                 .tuple_windows()
                 .map(|(chunk1, chunk2)| {
-                    dbg!(keysize, chunk1, chunk2);
+                    // dbg!(keysize, chunk1, chunk2);
                     let dist = hamming::distance(chunk1, chunk2) as f32;
 
                     dist / keysize as f32
@@ -134,23 +136,22 @@ pub fn guess_keysizes(input: &[u8], samples: usize) -> Vec<(f32, usize)> {
 
             (normalized, keysize)
         })
-        .collect();
-
-    keysizes.sort_by(|(n1, _), (n2, _)| n2.total_cmp(n1));
-
-    keysizes
-        .into_iter()
+        // .collect();
+        // keysizes.sort_by(|(n1, _), (n2, _)| n2.total_cmp(n1));
+        // keysizes
+        // .into_iter()
         // .map(|(_, k)| k)
         .collect()
 }
 
 /// Crack repeating-key xor.
-pub fn repeating_crack(input: &[u8]) -> Vec<CrackedMessage<Vec<u8>>> {
-    guess_keysizes(input, 2)
+#[must_use]
+pub fn repeating_crack(input: &[u8], min: usize, max: usize) -> Vec<CrackedMessage<Vec<u8>>> {
+    guess_keysizes(input, min, max)
         .into_iter()
         .map(|(_, k)| k)
-        .take(3)
-        .flat_map(|keysize| {
+        // .take(3)
+        .filter_map(|keysize| {
             let key: Vec<_> = transpose(input, keysize)
                 .into_iter()
                 // For each block, the single-byte XOR key that produces the best looking
@@ -158,6 +159,9 @@ pub fn repeating_crack(input: &[u8]) -> Vec<CrackedMessage<Vec<u8>>> {
                 // together and you have the key.
                 .filter_map(|block| single(&block).first().map(|res| res.key))
                 .collect();
+
+            // eprintln!("KEYSIZE: {keysize}",);
+            eprint!(".");
 
             if key.len() != keysize {
                 return None;
@@ -168,7 +172,7 @@ pub fn repeating_crack(input: &[u8]) -> Vec<CrackedMessage<Vec<u8>>> {
             CrackedMessage::try_from((key, decoded)).ok()
         })
         .collect_vec()
-        .sorted()
+    // .sorted()
 }
 
 #[cfg(test)]
