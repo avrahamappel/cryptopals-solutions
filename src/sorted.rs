@@ -1,3 +1,4 @@
+// @todo replace with itertools
 pub trait Sorted {
     fn sorted(self) -> Self;
 }

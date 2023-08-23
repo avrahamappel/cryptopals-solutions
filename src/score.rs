@@ -28,6 +28,7 @@ struct Score {
     avg_word_length: f64,
     avg_vowel_count: f64,
     avg_consonant_count: f64,
+    avg_punctuation_count: f64,
 }
 
 impl Score {
@@ -55,7 +56,7 @@ impl Score {
             return None;
         }
 
-        let (awl, (avc, acc)): (Vec<_>, (Vec<_>, Vec<_>)) = bytes
+        let (awl, (avc, (acc, pc))): (Vec<_>, (Vec<_>, (Vec<_>, Vec<_>))) = bytes
             .split(|b| *b == b' ')
             .map(|w| {
                 let word_length = w.len();
@@ -65,8 +66,12 @@ impl Score {
                     .iter()
                     .filter(|b| b"bcdfghjklmnpqrstvwxyz".contains(b))
                     .count();
+                let puncs = w.iter().filter(|b| b.is_ascii_punctuation()).count();
 
-                (word_length as f64, (vowels as f64, consonants as f64))
+                (
+                    word_length as f64,
+                    (vowels as f64, (consonants as f64, puncs as f64)),
+                )
             })
             .unzip();
 
@@ -74,6 +79,7 @@ impl Score {
             avg_word_length: average(&awl),
             avg_vowel_count: average(&avc),
             avg_consonant_count: average(&acc),
+            avg_punctuation_count: average(&pc),
         })
     }
 }
@@ -84,6 +90,7 @@ impl Score {
             avg_word_length: (self.avg_word_length - other.avg_word_length).abs(),
             avg_vowel_count: (self.avg_vowel_count - other.avg_vowel_count).abs(),
             avg_consonant_count: (self.avg_consonant_count - other.avg_consonant_count).abs(),
+            avg_punctuation_count: (self.avg_punctuation_count - other.avg_punctuation_count),
         }
     }
 
@@ -93,6 +100,7 @@ impl Score {
                 self.avg_word_length,
                 self.avg_vowel_count,
                 self.avg_consonant_count,
+                self.avg_punctuation_count,
             ]
             .as_slice(),
         )
@@ -125,31 +133,35 @@ mod tests {
         avg_word_length: 3.82,
         avg_vowel_count: 1.4,
         avg_consonant_count: 2.13,
+        avg_punctuation_count: 0.18,
     }; "Sample text")]
     #[test_case(REAL_TEXT => Score {
         avg_word_length: 3.8,
         avg_vowel_count: 1.3,
         avg_consonant_count: 2.45,
+        avg_punctuation_count: 0.05,
     }; "Real text")]
     #[test_case(GIBBERISH => Score {
         avg_word_length: 9.33,
         avg_vowel_count: 2.67,
         avg_consonant_count: 6.67,
+        avg_punctuation_count: 0.0,
     }; "Gibberish")]
     #[test_case(SOME_BYTES => Score {
         avg_word_length: 10.0,
         avg_vowel_count: 0.0,
         avg_consonant_count: 0.0,
+        avg_punctuation_count: 9.0,
     }; "Some bytes")]
     fn base_score(input: &str) -> Score {
         Score::maybe_from(input.as_bytes()).unwrap()
     }
 
     #[test_case(SAMPLE_TEXT, 0.0; "Sample text")]
-    #[test_case(REAL_TEXT, 0.15; "Real text")]
-    #[test_case(GIBBERISH, 3.77; "Gibberish")]
+    #[test_case(REAL_TEXT, 0.08; "Real text")]
+    #[test_case(GIBBERISH, 2.79; "Gibberish")]
     // Have to record this kind
-    #[test_case(SOME_BYTES, 3.24; "Some bytes")]
+    #[test_case(SOME_BYTES, 4.63; "Some bytes")]
     fn score(input: &str, expected: f64) {
         assert_eq!(Some(expected), super::score(input.as_bytes()));
     }
