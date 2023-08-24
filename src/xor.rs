@@ -40,7 +40,7 @@ pub enum CrackedMessageError {
 #[derive(Debug, Clone)]
 pub struct CrackedMessage<K> {
     pub key: K,
-    pub score: f64,
+    pub score: usize,
     pub message: Vec<u8>,
 }
 
@@ -68,7 +68,7 @@ impl<K> Eq for CrackedMessage<K> {}
 
 impl<K> Ord for CrackedMessage<K> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.score.total_cmp(&other.score)
+        self.score.cmp(&other.score)
     }
 }
 
@@ -136,7 +136,7 @@ pub fn guess_keysizes(input: &[u8], min: usize, max: usize) -> Vec<usize> {
 
     keysizes.sort_by(|(n1, _), (n2, _)| n2.total_cmp(n1));
 
-    keysizes.into_iter().map(|(_, k)| k).take(100).collect()
+    keysizes.into_iter().map(|(_, k)| k).take(3).collect()
 }
 
 /// Crack repeating-key xor.
@@ -151,10 +151,18 @@ pub fn repeating_crack(input: &[u8], min: usize, max: usize) -> Vec<CrackedMessa
                 // histogram is the repeating-key XOR key byte for that block. Put them
                 // together and you have the key.
                 .filter_map(|block| {
-                    single(&block).first().map(|res| {
-                        // eprintln!("keysize: {keysize}, key: {}", res.key);
-                        res.key
-                    })
+                    let results = single(&block);
+
+                    for res in &results[..] {
+                        eprintln!(
+                            "keysize: {keysize}, key: {}, score: {}, message: {}",
+                            char::from(res.key),
+                            res.score,
+                            String::from_utf8_lossy(&res.message)
+                        );
+                    }
+
+                    results.first().map(|res| res.key)
                 })
                 .collect();
 
