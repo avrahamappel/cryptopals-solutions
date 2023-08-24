@@ -1,7 +1,5 @@
 use itertools::Itertools;
 
-use crate::hamming;
-// use crate::hex;
 use crate::score;
 use crate::sorted::Sorted;
 
@@ -109,6 +107,19 @@ fn transpose(input: &[u8], size: usize) -> Vec<Vec<u8>> {
     )
 }
 
+/// Return the Hamming distance of the bits in two byte strings.
+fn hamming_distance(s1: &[u8], s2: &[u8]) -> usize {
+    s1.iter()
+        .zip(s2)
+        .map(|(b1, b2)| {
+            [0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1]
+                .into_iter()
+                .filter(|m| (b1 & m) != (b2 & m))
+                .count()
+        })
+        .sum()
+}
+
 // Return a list of possible sizes of key used to encode the given bytes with
 // repeating-key xor, ranked from most likely to least likely.
 #[must_use]
@@ -122,7 +133,7 @@ pub fn guess_keysizes(input: &[u8], min: usize, max: usize) -> Vec<usize> {
                 .take(6)
                 .tuple_windows()
                 .map(|(chunk1, chunk2)| {
-                    let dist = hamming::distance(chunk1, chunk2) as f32;
+                    let dist = hamming_distance(chunk1, chunk2) as f32;
 
                     dist / keysize as f32
                 })
@@ -197,5 +208,10 @@ mod tests {
             ],
             transpose(input.as_slice(), 3)
         );
+    }
+
+    #[test]
+    fn test_hamming_distance() {
+        assert_eq!(37, hamming_distance(b"this is a test", b"wokka wokka!!!"));
     }
 }
