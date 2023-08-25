@@ -20,5 +20,3 @@ fn main() {
         println!("Score: {}", p.score);
     }
 }
-// TODO test by encoding a known text of several lines with a known key
-// The problem might be that we need to check potential solutions for being pure ascii

@@ -20,10 +20,10 @@ lazy_static! {
     static ref BASE_SCORE: Score = Score::maybe_from(SAMPLE_TEXT.as_bytes()).unwrap();
 }
 
+const ASCII: &str = "abcdefghijklmnopqrstuvwxyz.,?!:'-@#$%^&*()[]{}\\/;`~_+=<>\"0123456789";
+
 fn ascii() -> impl Iterator<Item = u8> {
-    b"abcdefghijklmnopqrstuvwxyz \n.,?!:'-@#$%^&*()[]{}\\/;`~_+=<>\"0123456789"
-        .iter()
-        .copied()
+    ASCII.bytes()
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -39,28 +39,46 @@ impl Score {
             return None;
         }
 
-        let (char_counts, other_char_counts): (Vec<_>, Vec<_>) = bytes
-            .iter()
-            .map(|b| if *b == b'\r' { &b'\n' } else { b })
-            .map(u8::to_ascii_lowercase)
-            .dedup_with_count()
-            .partition(|(_, byte)| ascii().contains(byte));
+        let ascii_counts = bytes
+            .split(u8::is_ascii_whitespace)
+            .filter(|word| !word.is_empty())
+            .fold(
+                ascii().map(|b| (0, b)).collect_vec(),
+                |mut ascii_counts, word| {
+                    let (char_counts, other_char_counts): (Vec<_>, Vec<_>) = word
+                        .iter()
+                        // .map(|b| if *b == b'\r' { &b'\n' } else { b })
+                        .map(u8::to_ascii_lowercase)
+                        .dedup_with_count()
+                        .partition(|(_, byte)| ascii().contains(byte));
 
-        let mut ascii_counts = ascii()
-            .map(|b| {
-                let char_count = char_counts
-                    .iter()
-                    .find_map(|(count, char)| (*char).eq(&b).then_some(*count))
-                    .unwrap_or(0);
+                    for (count, b) in &mut ascii_counts {
+                        let char_count = char_counts
+                            .iter()
+                            .find_map(|(count, char)| (*char).eq(b).then_some(*count))
+                            .unwrap_or(0);
 
-                ((char_count * 10000) / bytes.len(), b)
-            })
-            .collect_vec();
+                        *count += (char_count * 100) / word.len();
+                    }
 
-        // Add all the other char counts together and store them
-        // represented by a single byte, '\0'
-        let other_char_counts_combined = other_char_counts.into_iter().map(|t| t.0).sum();
-        ascii_counts.push((other_char_counts_combined, b'\0'));
+                    // Add all the other char counts together and store them
+                    // represented by a single byte, '\0'
+                    let other_char_counts_combined =
+                        other_char_counts.into_iter().map(|t| t.0).sum();
+                    ascii_counts.push((other_char_counts_combined, b'\0'));
+
+                    ascii_counts
+                },
+            );
+
+        // eprintln!("raw scores for");
+        // eprintln!(
+        //     "{}",
+        //     bytes.iter().map(|b| char::from(*b)).collect::<String>()
+        // );
+        // for (count, byte) in &ascii_counts {
+        //     eprintln!("BYTE: {} score: {count}", char::from(*byte));
+        // }
 
         Some(Self { ascii_counts })
     }
