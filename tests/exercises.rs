@@ -45,7 +45,7 @@ fn single_byte_xor() {
 
 /// This test takes a long time when compiled in debug mode. I think the sorting
 /// slows it down. If it starts slowing down in release mode, I'll look
-/// into using BTreeSets or something instead of sorted Vecs.
+/// into using `BTreeSets` or something instead of sorted Vecs.
 #[test]
 fn detect_single_char_xor() {
     let strings = include_str!("../data/4.txt");
@@ -53,7 +53,7 @@ fn detect_single_char_xor() {
     let results = strings
         .lines()
         .flat_map(|l| {
-            println!("DECODING: {}", l);
+            println!("DECODING: {l}");
             let bytes = hex::decode(l.trim());
 
             xor::single(&bytes)

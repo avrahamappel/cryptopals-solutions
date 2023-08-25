@@ -4,12 +4,13 @@ use cryptopals::xor;
 fn main() {
     let input = base64::decode(&include_str!("../data/6-test.txt").replace('\n', ""));
 
-    let possibilities = xor::repeating_crack(&input, 2, 20);
+    let possibilities = xor::repeating_crack(&input, 2, 40);
 
     println!();
     println!("Possibilities:");
 
-    for p in possibilities {
+    for (i, p) in possibilities.iter().enumerate() {
+        println!("{}.", i + 1);
         println!(
             "Key: (len {}) {}",
             p.key.len(),

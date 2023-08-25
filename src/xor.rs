@@ -147,7 +147,15 @@ pub fn guess_keysizes(input: &[u8], min: usize, max: usize) -> Vec<usize> {
 
     keysizes.sort_by(|(n1, _), (n2, _)| n2.total_cmp(n1));
 
-    keysizes.into_iter().map(|(_, k)| k).take(3).collect()
+    eprintln!("Ranked possible keysizes:");
+    for (i, (_, k)) in keysizes.iter().enumerate() {
+        eprintln!("{}: {k}", i + 1);
+    }
+
+    keysizes
+        .into_iter()
+        .map(|(_, k)| k)
+        .collect()
 }
 
 /// Crack repeating-key xor.
@@ -158,27 +166,28 @@ pub fn repeating_crack(input: &[u8], min: usize, max: usize) -> Vec<CrackedMessa
         .filter_map(|keysize| {
             let key: Vec<_> = transpose(input, keysize)
                 .into_iter()
+                .enumerate()
                 // For each block, the single-byte XOR key that produces the best looking
                 // histogram is the repeating-key XOR key byte for that block. Put them
                 // together and you have the key.
-                .filter_map(|block| {
+                .filter_map(|(i, block)| {
                     let results = single(&block);
 
-                    for res in &results[..] {
+                    for (j, res) in results.iter().enumerate() {
                         eprintln!(
-                            "keysize: {keysize}, key: {}, score: {}, message: {}",
+                            "Possibility {} for position {} of {}: {}{}{}",
+                            j + 1,
+                            i + 1,
+                            keysize,
+                            "_".repeat(i),
                             char::from(res.key),
-                            res.score,
-                            String::from_utf8_lossy(&res.message)
+                            "_".repeat(keysize - i - 1)
                         );
                     }
 
                     results.first().map(|res| res.key)
                 })
                 .collect();
-
-            // eprintln!("KEYSIZE: {keysize}",);
-            eprint!(".");
 
             if key.len() != keysize {
                 return None;
