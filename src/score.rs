@@ -33,7 +33,10 @@ struct Score {
 
 impl Score {
     fn maybe_from(bytes: &[u8]) -> Option<Self> {
-        let unprintables = bytes.iter().filter(|b| !b.is_ascii()).count();
+        let unprintables = bytes
+            .iter()
+            .filter(|b| !b.is_ascii_graphic() && !b.is_ascii_whitespace())
+            .count();
 
         if unprintables > 0 {
             return None;
@@ -47,7 +50,6 @@ impl Score {
                 |mut ascii_counts, word| {
                     let (char_counts, other_char_counts): (Vec<_>, Vec<_>) = word
                         .iter()
-                        // .map(|b| if *b == b'\r' { &b'\n' } else { b })
                         .map(u8::to_ascii_lowercase)
                         .dedup_with_count()
                         .partition(|(_, byte)| ascii().contains(byte));
@@ -70,15 +72,6 @@ impl Score {
                     ascii_counts
                 },
             );
-
-        // eprintln!("raw scores for");
-        // eprintln!(
-        //     "{}",
-        //     bytes.iter().map(|b| char::from(*b)).collect::<String>()
-        // );
-        // for (count, byte) in &ascii_counts {
-        //     eprintln!("BYTE: {} score: {count}", char::from(*byte));
-        // }
 
         Some(Self { ascii_counts })
     }
@@ -118,9 +111,9 @@ mod tests {
     const SOME_BYTES: &str = "6^*&^*^&%#";
 
     #[test_case(SAMPLE_TEXT, 0; "Sample text")]
-    #[test_case(REAL_TEXT, 2042; "Real text")]
-    #[test_case(GIBBERISH, 5365; "Gibberish")]
-    #[test_case(SOME_BYTES, 6803; "Some bytes")]
+    #[test_case(REAL_TEXT, 5485; "Real text")]
+    #[test_case(GIBBERISH, 7232; "Gibberish")]
+    #[test_case(SOME_BYTES, 7463; "Some bytes")]
     fn score(input: &str, expected: usize) {
         assert_eq!(Some(expected), super::score(input.as_bytes()));
     }

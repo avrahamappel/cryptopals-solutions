@@ -130,32 +130,21 @@ pub fn guess_keysizes(input: &[u8], min: usize, max: usize) -> Vec<usize> {
         .map(|keysize| {
             let distances: Vec<_> = input
                 .chunks(keysize)
-                .take(6)
+                .take(4)
                 .tuple_windows()
-                .map(|(chunk1, chunk2)| {
-                    let dist = hamming_distance(chunk1, chunk2) as f32;
-
-                    dist / keysize as f32
-                })
+                .map(|(chunk1, chunk2)| hamming_distance(chunk1, chunk2))
                 .collect();
 
-            let normalized = distances.iter().product::<f32>() / distances.len() as f32;
+            let average = distances.iter().sum::<usize>() / distances.len();
+            let normalized = (average * 1000) / keysize;
 
             (normalized, keysize)
         })
         .collect();
 
-    keysizes.sort_by(|(n1, _), (n2, _)| n2.total_cmp(n1));
+    keysizes.sort_by(|(n1, _), (n2, _)| n1.cmp(n2));
 
-    eprintln!("Ranked possible keysizes:");
-    for (i, (_, k)) in keysizes.iter().enumerate() {
-        eprintln!("{}: {k}", i + 1);
-    }
-
-    keysizes
-        .into_iter()
-        .map(|(_, k)| k)
-        .collect()
+    keysizes.into_iter().take(3).map(|(_, k)| k).collect()
 }
 
 /// Crack repeating-key xor.
@@ -166,27 +155,10 @@ pub fn repeating_crack(input: &[u8], min: usize, max: usize) -> Vec<CrackedMessa
         .filter_map(|keysize| {
             let key: Vec<_> = transpose(input, keysize)
                 .into_iter()
-                .enumerate()
                 // For each block, the single-byte XOR key that produces the best looking
                 // histogram is the repeating-key XOR key byte for that block. Put them
                 // together and you have the key.
-                .filter_map(|(i, block)| {
-                    let results = single(&block);
-
-                    for (j, res) in results.iter().enumerate() {
-                        eprintln!(
-                            "Possibility {} for position {} of {}: {}{}{}",
-                            j + 1,
-                            i + 1,
-                            keysize,
-                            "_".repeat(i),
-                            char::from(res.key),
-                            "_".repeat(keysize - i - 1)
-                        );
-                    }
-
-                    results.first().map(|res| res.key)
-                })
+                .filter_map(|block| single(&block).first().map(|res| res.key))
                 .collect();
 
             if key.len() != keysize {
