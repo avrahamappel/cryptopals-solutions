@@ -1,22 +1,13 @@
-use cryptopals::base64;
-use cryptopals::xor;
-
 fn main() {
-    let input = base64::decode(&include_str!("../data/6-test.txt").replace('\n', ""));
+    // AES in ECB mode
 
-    let possibilities = xor::repeating_crack(&input, 2, 40);
+    // The Base64-encoded content in this file has been encrypted via AES-128 in ECB mode under the key
 
-    println!();
-    println!("Possibilities:");
+    // "YELLOW SUBMARINE".
 
-    for (i, p) in possibilities.iter().enumerate() {
-        println!("{}.", i + 1);
-        println!(
-            "Key: (len {}) {}",
-            p.key.len(),
-            String::from_utf8_lossy(&p.key)
-        );
-        println!("Decoded: {}", String::from_utf8_lossy(&p.message));
-        println!("Score: {}", p.score);
-    }
+    // (case-sensitive, without the quotes; exactly 16 characters; I like "YELLOW SUBMARINE" because it's exactly 16 bytes long, and now you do too).
+
+    // Decrypt it. You know the key, after all.
+
+    // Easiest way: use OpenSSL::Cipher and give it AES-128-ECB as the cipher.
 }
