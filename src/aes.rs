@@ -1,7 +1,3 @@
-// fn round_keys(initial_key: &[u8]) -> impl Iterator<Item = Vec<u8>> {
-//     todo!()
-// }
-
 // fn add_round_key<S>(state: &mut [u8; S], round_key: &[u8; S]) {
 fn add_round_key(mut state: Vec<u8>, round_key: &[u8]) {
     // TODO this can probably be replaced with a const param
@@ -76,24 +72,24 @@ fn mix_columns(mut state: Vec<u8>) {
 // 3. AddRoundKey
 
 // Encode a cipher using AES
-// pub fn encode(cipher: &[u8], key: &[u8]) -> Option<Vec<u8>> {
-//     let mut state = cipher.clone();
+pub fn encode(cipher: &[u8], key: &[u8]) -> Option<Vec<u8>> {
+    let mut state = cipher.clone();
 
-// for (i, rk) in round_keys(key).take(11).enumerate() {
-//     if i != 0 {
-//         // sub_bytes(state);
-//         shift_rows(state);
+    for (i, rk) in round_keys(key).take(11).enumerate() {
+        if i != 0 {
+            // sub_bytes(state);
+            shift_rows(state);
 
-//         if i != 10 {
-//             // mix_columns(state);
-//         }
-//     }
+            if i != 10 {
+                // mix_columns(state);
+            }
+        }
 
-//     // add_round_key(state, &rk);
-// }
+        // add_round_key(state, &rk);
+    }
 
-// Some(state)
-// }
+    Some(state)
+}
 
 // To decode, just follow the steps in the opposite order
 pub fn decode(cipher: &[u8], key: &str, arg: i32) -> () {
