@@ -2,7 +2,7 @@ use cryptopals::base64;
 use cryptopals::xor;
 
 fn main() {
-    let input = base64::decode(&include_str!("../data/6-test.txt").replace('\n', ""));
+    let input = base64::decode(&include_str!("../data/6.txt").replace('\n', ""));
 
     let possibilities = xor::repeating_crack(&input, 2, 40);
 
