@@ -2,7 +2,14 @@ use aes::{
     cipher::{generic_array::GenericArray, BlockDecrypt, KeyInit},
     Aes128,
 };
+use itertools::Itertools;
 
+use crate::{
+    crack_utils::{guess_keysizes, transpose, CrackedMessage},
+    sorted::Sorted,
+};
+
+#[must_use]
 pub fn aes_128_ecb(key: &[u8], mut data: Vec<u8>) -> Vec<u8> {
     let key = GenericArray::from_slice(key);
     let cipher = Aes128::new(key);
@@ -10,6 +17,42 @@ pub fn aes_128_ecb(key: &[u8], mut data: Vec<u8>) -> Vec<u8> {
         cipher.decrypt_block(GenericArray::from_mut_slice(chunk));
     }
     data
+}
+
+fn single(bytes: &[u8]) -> Vec<CrackedMessage<u8>> {
+    (0x00..=0xFF)
+        .filter_map(|b| {
+            let cipher = Aes128::new(GenericArray::from_slice(&[b; 16]));
+            let mut data = bytes.to_owned();
+            cipher.decrypt_block(GenericArray::from_mut_slice(&mut data));
+
+            CrackedMessage::try_from((b, data)).ok()
+        })
+        .collect_vec()
+        .sorted()
+}
+
+#[must_use]
+pub fn aes_crack(input: &[u8], min: usize, max: usize) -> Vec<CrackedMessage<Vec<u8>>> {
+    guess_keysizes(input, min, max)
+        .into_iter()
+        .filter_map(|keysize| {
+            let key: Vec<_> = transpose(input, keysize)
+                .into_iter()
+                .filter_map(|block| single(&block).first().map(|res| res.key))
+                .collect();
+
+            if key.len() != keysize {
+                return None;
+            }
+
+            let data = input.to_vec();
+            let decoded = aes_128_ecb(&key, data);
+
+            CrackedMessage::try_from((key, decoded)).ok()
+        })
+        .collect_vec()
+        .sorted()
 }
 
 #[cfg(test)]

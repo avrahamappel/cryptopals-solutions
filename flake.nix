@@ -20,7 +20,7 @@
       {
         devShells.default = pkgs.mkShell {
           buildInputs = [
-            pkgs.cargo-flamegraph
+            pkgs.bacon
             pkgs.rust-analyzer
             rust
           ];
